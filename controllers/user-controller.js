@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs') // 載入 bcrypt
-const { User, Comment, Restaurant, Favorite, Like, Followship } = require('../models')
+const { User, Comment, Restaurant, Category, Favorite, Like, Followship } = require('../models')
 const { imgurFileHandler } = require('../helpers/file-helpers') // 將 file-helper 載進來
 const { getUser } = require('../helpers/auth-helpers')
 
@@ -49,26 +49,70 @@ const userController = {
         raw: true,
         nest: true
       }),
-      Comment.findAndCountAll({
-        include: [
-          Restaurant
-        ],
-        where: where,
+      Restaurant.findAll({
+        include: [Category]
+      }),
+      Comment.count({
+        where: {
+          userId: Number(req.params.id)
+        },
+        attributes: ['restaurantId'],
+        group: 'restaurantId',
         raw: true,
         nest: true
-      })
+      }),
+      Favorite.findAll({
+        where: {
+          userId: req.user.id
+        },
+        attributes: ['restaurantId'],
+        group: 'restaurantId'
+      }),
+      Followship.findAll({
+        where: {
+          followerId: req.user.id
+        },
+        attributes: ['followingId']
+      }),
+      Followship.findAll({
+        where: {
+          followingId: req.user.id
+        },
+        attributes: ['followingId', 'followerId']
+      }),
+      User.findAll()
     ])
-      .then(([user, comment]) => {
-        const data = comment.rows.map(r => ({
-          ...r
-        }))
-        const count = comment.count
+      .then(([user, restaurant, comment, favorite, following, follower, allUser]) => {
+        const totalComment = req.user && comment.map(tc => tc.restaurantId) // 把所有comment的變成array
+        const totalFavorite = req.user && favorite.map(tfa => tfa.restaurantId) // 把所有favorite的變成array
+        const totalFollowing = req.user && following.map(tfo => tfo.followingId) // 把所有follower的變成array
+        const totalFollower = req.user && follower.map(tfo => tfo.followerId) // 把所有following的變成array
+        const commentCount = comment.length // 評論總數
+        const favoriteCount = favorite.length // 收藏總數
+        const followerCount = follower.length // 追隨者總數(被追)
+        const followingCount = following.length // 追蹤者總數(主動)
+        const restaurants = restaurant
+          .map(r => ({
+            ...r.toJSON(),
+            isCommented: totalComment.includes(r.id), // 該user評論過的餐廳跟所有餐廳一個個比對
+            isFavorited: totalFavorite.includes(r.id) // 該user評論過的餐廳跟所有餐廳一個個比對
+          }))
+        const users = allUser
+          .map(u => ({
+            ...u.toJSON(),
+            isFollower: totalFollower.includes(u.id), // 該user追隨的所有user一個個比對
+            isFollowing: totalFollowing.includes(u.id) // 該user被追隨的所有user一個個比對
+          }))
         if (!user) throw new Error("User didn't exist!")
         return res.render('users/profile', {
           user,
-          comment: data,
-          count,
-          loginId
+          commentCount,
+          loginId,
+          restaurants,
+          favoriteCount,
+          users,
+          followerCount,
+          followingCount
         })
       })
   },
@@ -189,6 +233,7 @@ const userController = {
       .catch(err => next(err))
   },
   getTopUsers: (req, res, next) => {
+    const userId = req.user.id
     // 撈出所有 User 與 followers 資料
     return User.findAll({
       include: [{ model: User, as: 'Followers' }]
@@ -202,15 +247,18 @@ const userController = {
             // 計算追蹤者人數
             followerCount: user.Followers.length,
             // 判斷目前登入使用者是否已追蹤該 user 物件
-            isFollowed: req.user.Followings.some(f => f.id === user.id)
+            isFollowed: req.user.Followings.some(f => f.id === user.id),
+            isSelf: userId === user.id
           }))
           .sort((a, b) => b.followerCount - a.followerCount)
+        console.log(result)
         res.render('top-users', { users: result })
       })
       .catch(err => next(err))
   },
   addFollowing: (req, res, next) => {
     const { userId } = req.params
+    if (Number(req.params.userId) === req.user.id) throw new Error('不能收藏自己!')
     Promise.all([
       User.findByPk(userId),
       Followship.findOne({

@@ -7,11 +7,13 @@
     {{/if}}
   </div>
   <div class="col-md-8">
-    <h1>{{ user.name }} profile</h1>
+    <h3 class="mb-4">{{ user.name }} profile</h3>
+    <h3 class="mb-4">{{ user.email }}</h3>
     <br>
-    <h3>{{ user.email }}</h3>
-    <br>
-    <h3>{{ count }} 已評論餐廳</h3>
+    <h6 class="mb-2">{{ commentCount }} 已評論餐廳</h6>
+    <h6 class="mb-2">{{ favoriteCount }} 已收藏餐廳</h6>
+    <h6 class="mb-2">{{ followingCount }} following(追蹤者)</h6>
+    <h6 class="mb-2">{{ followerCount }} followers(追隨者)</h6>
     <br>
     {{#ifCond user.id loginId}}
     <a class="btn btn-primary link-light" href="/users/{{ user.id }}/edit">Edit</a>
@@ -20,23 +22,67 @@
   </div>
   <hr> 
   <div class="row">
-    <div class="container mb-2">
-      <h5>{{ count }} 已評論餐廳</h5>
-    </div>
-    <br>
-    {{#if comment}}
-      {{#each comment}}
-        <div class="col-md-2 mb-2 me-2 justify-content-center">
-          <a href="/restaurants/{{this.Restaurant.id}}">
-            <img class="card-img-top img-fluid" src="{{this.Restaurant.image}}" alt="Card image cap" width="220px" height="80px">
-          </a>
-        </div>
-      {{/each}}
-    {{else}}
-      <br>
+    <div class="col-md-4 row me-2">
       <div>
-        <h2>趕快去探索一些餐廳吧！！</h2>
+        <h5>追蹤者 : {{ followingCount }}</h5>
       </div>
-    {{/if}}
+      <br>
+      {{#each users}}
+        {{#if this.isFollowing}}
+          <div class="col-md-3 d-flex">
+            <a href="/users/{{this.id}}">
+              <img class="card-img-top img-fluid" src="{{this.image}}"  width="60px" height="40px">
+            </a>
+          </div>
+        {{/if}}
+      {{/each}}
+      <br>
+      <br>
+      <div class="mt-2 mb-2">
+        <h5>追隨者 : {{ followerCount }} </h5>
+      </div>
+      <br>
+      {{#each users}}
+        {{#if this.isFollower}}
+          <div class="col-md-3 d-flex">
+            <a href="/users/{{this.id}}">
+              <img class="card-img-top img-fluid" src="{{this.image}}"  width="60px" height="40px">
+            </a>
+          </div>
+        {{/if}}
+      {{/each}}
+      <br>
+    </div>
+    <div class="col-md-8 mb-2 d-flex flex-wrap">
+      <div class="col-md-12 mb-2">
+        <h5>{{ commentCount }} 已評論餐廳</h5>
+      </div>
+      <br>
+        {{#each restaurants}}
+          {{#if this.isCommented}}
+            <div class="col-md-1 mb-2 me-2 d-flex">
+              <a href="/restaurants/{{this.id}}">
+                <img class="card-img-top img-fluid" src="{{this.image}}"  width="60px" height="40px">
+              </a>
+            </div>
+          {{/if}}
+        {{/each}}
+      <br>
+      <br>
+       <div class="col-md-12 mb-2">
+        <h5>{{ favoriteCount }} 已收藏餐廳</h5>
+      </div>
+      <br>
+        {{#each restaurants}}
+          {{#if this.isFavorited}}
+            <div class="col-md-1 mb-2 me-2 d-flex">
+              <a href="/restaurants/{{this.id}}">
+                <img class="card-img-top img-fluid" src="{{this.image}}"  width="60px" height="40px">
+              </a>
+            </div>
+          {{/if}}
+        {{/each}}
+      <br>
+    </div>
   </div>
 </div>
