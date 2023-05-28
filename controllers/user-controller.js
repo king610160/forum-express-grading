@@ -63,20 +63,20 @@ const userController = {
       }),
       Favorite.findAll({
         where: {
-          userId: req.user.id
+          userId: loginId
         },
         attributes: ['restaurantId'],
         group: 'restaurantId'
       }),
       Followship.findAll({
         where: {
-          followerId: req.user.id
+          followerId: loginId
         },
         attributes: ['followingId']
       }),
       Followship.findAll({
         where: {
-          followingId: req.user.id
+          followingId: loginId
         },
         attributes: ['followingId', 'followerId']
       }),
@@ -94,14 +94,14 @@ const userController = {
         const restaurants = restaurant
           .map(r => ({
             ...r.toJSON(),
-            isCommented: totalComment.includes(r.id), // 該user評論過的餐廳跟所有餐廳一個個比對
-            isFavorited: totalFavorite.includes(r.id) // 該user評論過的餐廳跟所有餐廳一個個比對
+            isCommented: req.user && totalComment.includes(r.id), // 該user評論過的餐廳跟所有餐廳一個個比對
+            isFavorited: req.user && totalFavorite.includes(r.id) // 該user評論過的餐廳跟所有餐廳一個個比對
           }))
         const users = allUser
           .map(u => ({
             ...u.toJSON(),
-            isFollower: totalFollower.includes(u.id), // 該user追隨的所有user一個個比對
-            isFollowing: totalFollowing.includes(u.id) // 該user被追隨的所有user一個個比對
+            isFollower: req.user && totalFollower.includes(u.id), // 該user追隨的所有user一個個比對
+            isFollowing: req.user && totalFollowing.includes(u.id) // 該user被追隨的所有user一個個比對
           }))
         if (!user) throw new Error("User didn't exist!")
         return res.render('users/profile', {
