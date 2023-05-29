@@ -117,11 +117,11 @@ const restaurantController = {
             ...r.toJSON(), // 整理格式
             description: r.description.substring(0, 50), // description縮到50字
             favoritedCount: r.FavoritedUsers.length, // 餐廳被user給favorite的數量
-            // isFavorited: req.user && req.user.FavoritedRestaurants.some(f => f.id === r.id) // 該user喜歡的餐廳
+            isNotZero: !(r.FavoritedUsers.length === 0), // 判斷是否為0為給個屬性
             isFavorited: req.user && Favoritedrestaurants.includes(r.id) // 該user喜歡的餐廳
           }))
           .sort((a, b) => b.favoritedCount - a.favoritedCount) // 按數字反序排列
-        // console.log(Favoritedrestaurants)
+        console.log(data)
         for (let i = 0; i < 10; i++) { // 放10個
           newData.push(data[i])
         }
